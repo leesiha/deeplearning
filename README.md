@@ -7,7 +7,7 @@
 
 주교재를 통해 학습한 기본적인 딥러닝 개념과 기법을 바탕으로, CNN 기반 분류 모델을 적용하여 녹내장을 진단하는 실습 프로젝트입니다.
 
-개발할 녹내장 진단 모델은 **고해상도 안저 이미지**를 분석하여 **녹내장 여부**를 판단하는 모델로, 기타 모델을 사용하지 않고 **밑바닥부터 직접 구현**할 예정입니다.
+개발할 녹내장 진단 모델은 [고해상도 안저 이미지](https://www.kaggle.com/datasets/arnavjain1/glaucoma-datasets/data)를 분석하여 **녹내장 여부**를 판단하는 모델로, 기타 모델을 사용하지 않고 **밑바닥부터 직접 구현**할 예정입니다.
 
 <H1 align="center">
   Project Overview
@@ -34,10 +34,10 @@
 ├── /data/                    # 데이터 로드 및 전처리
 │   ├── dataset_loader.py    
 │   └── preprocess.py        
-├── /tests/                   # 테스트 파일
-│   └── test_preprocess.py    
+├── /G1020/                   # 캐글 데이터셋(직접 다운로드)
 └── README.md                 # 프로젝트 개요
 ```
+[캐글 데이터셋 다운로드 링크](https://www.kaggle.com/datasets/arnavjain1/glaucoma-datasets/data)
 
 ---
 
