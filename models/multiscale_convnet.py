@@ -3,53 +3,53 @@ from models.deep_convnet import Convolution, Pooling, Relu, Affine, SoftmaxWithL
 
 
 class MultiscaleConvNet:
-    def __init__(self, input_dim=(3, 512, 512), num_classes=10):
+    def __init__(self, input_dim=(3, 224, 224), num_classes=10):
         # 기존 구조는 그대로 유지
-        self.conv1_3x3 = Convolution(np.random.randn(
-            16, 3, 3, 3), np.zeros(16), stride=1, pad=1)
-        self.conv1_5x5 = Convolution(np.random.randn(
-            16, 3, 5, 5), np.zeros(16), stride=1, pad=2)
-        self.conv1_7x7 = Convolution(np.random.randn(
-            16, 3, 7, 7), np.zeros(16), stride=1, pad=3)
+        self.conv1_3x3 = Convolution(np.random.randn(16, 3, 3, 3), np.zeros(16), stride=1, pad=1)
+        self.conv1_5x5 = Convolution(np.random.randn(16, 3, 5, 5), np.zeros(16), stride=1, pad=2)
+        self.conv1_7x7 = Convolution(np.random.randn(16, 3, 7, 7), np.zeros(16), stride=1, pad=3)
         self.relu1 = Relu()
-        self.pool1 = Pooling(2, 2, stride=2)  # 512 -> 256
+        self.pool1 = Pooling(2, 2, stride=2)  # 224 -> 112
 
         # Conv2 + Pool2
-        self.conv2 = Convolution(np.random.randn(
-            32, 48, 3, 3), np.zeros(32), stride=1, pad=1)
+        self.conv2 = Convolution(np.random.randn(32, 48, 3, 3), np.zeros(32), stride=1, pad=1)
         self.relu2 = Relu()
-        self.pool2 = Pooling(2, 2, stride=2)  # 256 -> 128
+        self.pool2 = Pooling(2, 2, stride=2)  # 112 -> 56
 
         # Conv3 + Pool3
-        self.conv3 = Convolution(np.random.randn(
-            64, 32, 3, 3), np.zeros(64), stride=1, pad=1)
+        self.conv3 = Convolution(np.random.randn(64, 32, 3, 3), np.zeros(64), stride=1, pad=1)
         self.relu3 = Relu()
-        self.pool3 = Pooling(2, 2, stride=2)  # 128 -> 64
+        self.pool3 = Pooling(2, 2, stride=2)  # 56 -> 28
 
         # Conv4 + Pool4
-        self.conv4 = Convolution(np.random.randn(
-            128, 64, 3, 3), np.zeros(128), stride=1, pad=1)
+        self.conv4 = Convolution(np.random.randn(128, 64, 3, 3), np.zeros(128), stride=1, pad=1)
         self.relu4 = Relu()
-        self.pool4 = Pooling(2, 2, stride=2)  # 64 -> 32
+        self.pool4 = Pooling(2, 2, stride=2)  # 28 -> 14
 
         # Conv5 + Pool5
-        self.conv5 = Convolution(np.random.randn(
-            256, 128, 3, 3), np.zeros(256), stride=1, pad=1)
+        self.conv5 = Convolution(np.random.randn(256, 128, 3, 3), np.zeros(256), stride=1, pad=1)
         self.relu5 = Relu()
-        self.pool5 = Pooling(2, 2, stride=2)  # 32 -> 16
-
-        # Conv6 + 마지막 풀링 레이어 추가
-        self.conv6 = Convolution(np.random.randn(
-            512, 256, 3, 3), np.zeros(512), stride=1, pad=1)  # 추가된 Conv
-        self.relu6 = Relu()
-        self.pool6 = Pooling(2, 2, stride=2)  # 16 -> 8 (마지막)
+        self.pool5 = Pooling(2, 2, stride=2)  # 14 -> 7
 
         # Fully connected layers
-        self.affine1 = Affine(np.random.randn(
-            512 * 8 * 8, 128), np.zeros(128))  # 8x8 출력에 맞춤
-        self.affine2 = Affine(np.random.randn(
-            128, num_classes), np.zeros(num_classes))
+        self.affine1 = Affine(np.random.randn(256 * 7 * 7, 128), np.zeros(128))
+        self.affine2 = Affine(np.random.randn(128, num_classes), np.zeros(num_classes))
+
+        # Softmax with loss layer 추가
         self.last_layer = SoftmaxWithLoss()
+
+        # params 딕셔너리 추가 - 각 레이어의 W와 b를 직접 참조
+        self.params = {
+            'W1': self.conv1_3x3.W, 'b1': self.conv1_3x3.b,
+            'W2': self.conv1_5x5.W, 'b2': self.conv1_5x5.b,
+            'W3': self.conv1_7x7.W, 'b3': self.conv1_7x7.b,
+            'W4': self.conv2.W, 'b4': self.conv2.b,
+            'W5': self.conv3.W, 'b5': self.conv3.b,
+            'W6': self.conv4.W, 'b6': self.conv4.b,
+            'W7': self.conv5.W, 'b7': self.conv5.b,
+            'W8': self.affine1.W, 'b8': self.affine1.b,
+            'W9': self.affine2.W, 'b9': self.affine2.b
+        }
 
     def forward(self, x):
         # Multiscale convolution
@@ -57,37 +57,43 @@ class MultiscaleConvNet:
         conv_5x5 = self.conv1_5x5.forward(x)
         conv_7x7 = self.conv1_7x7.forward(x)
 
+        # 각 합성곱 결과의 크기 확인
+        print(f"conv_3x3 shape: {conv_3x3.shape}")
+        print(f"conv_5x5 shape: {conv_5x5.shape}")
+        print(f"conv_7x7 shape: {conv_7x7.shape}")
+
         # Concatenate outputs
         concat = np.concatenate((conv_3x3, conv_5x5, conv_7x7), axis=1)
+        print(f"Concatenated output shape: {concat.shape}")
 
         # First pooling
         relu_out = self.relu1.forward(concat)
         pool_out = self.pool1.forward(relu_out)
+        print(f"pool1 output shape: {pool_out.shape}")
 
         # Second conv and pooling
         conv_out = self.conv2.forward(pool_out)
         relu_out = self.relu2.forward(conv_out)
         pool_out = self.pool2.forward(relu_out)
+        print(f"pool2 output shape: {pool_out.shape}")
 
         # Third conv and pooling
         conv_out = self.conv3.forward(pool_out)
         relu_out = self.relu3.forward(conv_out)
         pool_out = self.pool3.forward(relu_out)
+        print(f"pool3 output shape: {pool_out.shape}")
 
         # Fourth conv and pooling
         conv_out = self.conv4.forward(pool_out)
         relu_out = self.relu4.forward(conv_out)
         pool_out = self.pool4.forward(relu_out)
+        print(f"pool4 output shape: {pool_out.shape}")
 
         # Fifth conv and pooling
         conv_out = self.conv5.forward(pool_out)
         relu_out = self.relu5.forward(conv_out)
         pool_out = self.pool5.forward(relu_out)
-
-        # Conv6 + 마지막 풀링
-        conv_out = self.conv6.forward(pool_out)
-        relu_out = self.relu6.forward(conv_out)
-        pool_out = self.pool6.forward(relu_out)
+        print(f"pool5 output shape: {pool_out.shape}")
 
         # Flatten output for the fully connected layers
         pool_out = pool_out.reshape(pool_out.shape[0], -1)
@@ -98,44 +104,103 @@ class MultiscaleConvNet:
 
         return score
 
-
-    def loss(self, x, t):
-        y = self.forward(x)
-        return self.last_layer.forward(y, t)
-
-    def backward(self, dout=1):
-        # Backward pass (Backpropagation)
-        dout = self.last_layer.backward(dout)
+    def backward(self, dout):
+        # Last layer -> Affine2 -> Affine1 역전파
         dout = self.affine2.backward(dout)
         dout = self.affine1.backward(dout)
+
+        # Affine layer에서 나온 dout을 다시 4D tensor로 reshape
+        dout = dout.reshape(dout.shape[0], 256, 7, 7)
+
+        dout = self.pool5.backward(dout)
+        dout = self.relu5.backward(dout)
+        dout = self.conv5.backward(dout)
+        print(f"dout shape after pool5 backward: {dout.shape}")
+
+        dout = self.pool4.backward(dout)
+        dout = self.relu4.backward(dout)
+        dout = self.conv4.backward(dout)
+        print(f"dout shape after pool4 backward: {dout.shape}")
+
+        dout = self.pool3.backward(dout)
+        dout = self.relu3.backward(dout)
+        dout = self.conv3.backward(dout)
+        print(f"dout shape after pool3 backward: {dout.shape}")
+
         dout = self.pool2.backward(dout)
         dout = self.relu2.backward(dout)
         dout = self.conv2.backward(dout)
+        print(f"dout shape after pool2 backward: {dout.shape}")
+
         dout = self.pool1.backward(dout)
         dout = self.relu1.backward(dout)
 
-        # Multiscale Convolution layers backpropagation
-        dout_3x3 = self.conv1_3x3.backward(dout)
-        dout_5x5 = self.conv1_5x5.backward(dout)
-        dout_7x7 = self.conv1_7x7.backward(dout)
+        # Concatenated 레이어를 다시 분할
+        dout_3x3, dout_5x5, dout_7x7 = np.split(dout, 3, axis=1)
+        print(f"dout_3x3 shape: {dout_3x3.shape}")
+        print(f"dout_5x5 shape: {dout_5x5.shape}")
+        print(f"dout_7x7 shape: {dout_7x7.shape}")
+
+        # 각 합성곱 레이어로 역전파
+        dout_3x3 = self.conv1_3x3.backward(dout_3x3)
+        dout_5x5 = self.conv1_5x5.backward(dout_5x5)
+        dout_7x7 = self.conv1_7x7.backward(dout_7x7)
+
+        # 각 합성곱 레이어의 dW 크기 확인
+        print(f"dW shape of conv1_3x3: {self.conv1_3x3.dW.shape}")
+        print(f"dW shape of conv1_5x5: {self.conv1_5x5.dW.shape}")
+        print(f"dW shape of conv1_7x7: {self.conv1_7x7.dW.shape}")
 
         return dout_3x3 + dout_5x5 + dout_7x7
 
     def gradient(self, x, t):
-        # Forward pass and compute loss
-        self.loss(x, t)
+        # Forward
+        y = self.forward(x)
+        loss = self.last_layer.forward(y, t)
 
-        # Backward pass to compute gradients
-        dout = 1  # Assuming softmax with cross-entropy loss
+        # Backward
+        dout = self.last_layer.backward()
         self.backward(dout)
 
-        # Store gradients in a dictionary
-        grads = {}
-        grads['W1'], grads['b1'] = self.conv1_3x3.dW, self.conv1_3x3.db
-        grads['W2'], grads['b2'] = self.conv1_5x5.dW, self.conv1_5x5.db
-        grads['W3'], grads['b3'] = self.conv1_7x7.dW, self.conv1_7x7.db
-        grads['W4'], grads['b4'] = self.conv2.dW, self.conv2.db
-        grads['W5'], grads['b5'] = self.conv3.dW, self.conv3.db  # 추가된 레이어 예시
-        grads['W6'], grads['b6'] = self.affine1.dW, self.affine1.db  # 전결합층
+        # 그래디언트 저장
+        grads = {
+            'W1': self.conv1_3x3.dW, 'b1': self.conv1_3x3.db,
+            'W2': self.conv1_5x5.dW, 'b2': self.conv1_5x5.db,
+            'W3': self.conv1_7x7.dW, 'b3': self.conv1_7x7.db,
+            'W4': self.conv2.dW, 'b4': self.conv2.db,
+            'W5': self.conv3.dW, 'b5': self.conv3.db,
+            'W6': self.conv4.dW, 'b6': self.conv4.db,
+            'W7': self.conv5.dW, 'b7': self.conv5.db,
+            'W8': self.affine1.dW, 'b8': self.affine1.db,
+            'W9': self.affine2.dW, 'b9': self.affine2.db
+        }
 
         return grads
+    
+    def loss(self, x, t):
+        y = self.forward(x)
+        return self.last_layer.forward(y, t)
+
+    def accuracy(self, x, t):
+        import time
+
+        start_time = time.time()
+        # Forward를 통해 예측값 계산
+        y = self.forward(x)
+        print(f"Forward 실행 시간: {time.time() - start_time:.2f} 초")
+
+        # 예측값 중 가장 높은 확률을 가진 클래스 선택
+        y = np.argmax(y, axis=1)
+
+        # 레이블이 원-핫 인코딩된 경우 처리
+        if t.ndim != 1:
+            t = np.argmax(t, axis=1)
+
+        end_time = time.time()
+        print(f"Forward 및 argmax 실행 시간: {end_time - start_time:.2f} 초")
+
+        # 정확도 계산
+        accuracy = np.sum(y == t) / float(x.shape[0])
+
+        print(f"Accuracy 계산 완료: {accuracy}")
+        return accuracy
