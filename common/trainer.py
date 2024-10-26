@@ -58,6 +58,7 @@ class Trainer:
 
             x_train_sample, t_train_sample = self.x_train, self.t_train
             x_test_sample, t_test_sample = self.x_test, self.t_test
+
             if not self.evaluate_sample_num_per_epoch is None:
                 t = self.evaluate_sample_num_per_epoch
                 x_train_sample, t_train_sample = self.x_train[:t], self.t_train[:t]
