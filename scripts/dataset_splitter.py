@@ -150,8 +150,7 @@ def split_and_copy_data(input_dir='G1020/Images', output_dir='data/', cropped_di
     dirs = ['train', 'validate', 'test']
     subdirs = ['original', 'vCDR', 'cropped', 'square', 'nerve_removed']
     # train/validate에 모든 subdir 생성
-    create_output_dirs(output_dir, ['train', 'validate'], subdirs)
-    create_output_dirs(output_dir, ['test'], ['original'])  # test에 original만 생성
+    create_output_dirs(output_dir, ['train', 'validate', 'test'], subdirs)
 
     # 파일 복사 (train, validate는 모든 subdirs, test는 original만 복사)
     copy_files(train_files, input_dir, output_dir, 'train',
@@ -159,4 +158,4 @@ def split_and_copy_data(input_dir='G1020/Images', output_dir='data/', cropped_di
     copy_files(val_files, input_dir, output_dir, 'validate',
                cropped_dir, square_dir, nerve_removed_dir, copy_all=True)
     copy_files(test_files, input_dir, output_dir, 'test',
-               copy_all=False)  # test에는 original만 복사
+               cropped_dir, square_dir, nerve_removed_dir, copy_all=True)
