@@ -1,7 +1,8 @@
 /.DS_Store
 /.pytest_cache
 /.vscode
-/models
+
 /tests
-/train
+/data/*
 /G1020/*
+*/__pycache__/*
