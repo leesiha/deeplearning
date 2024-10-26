@@ -93,7 +93,7 @@ def preprocess_image(image_path, target_size=None, normalize=True):
 # 특정 데이터 세트(train/validate)에 대한 전처리
 
 
-def preprocess_data(data_dir='data/train', target_size_cropped=(256, 256)):
+def preprocess_data(data_dir='data/train', resize_value=(224, 224)):
     """
     특정 데이터 디렉토리 내 모든 이미지를 전처리하는 함수
     - square, cropped, nerve_removed 디렉토리 내 이미지를 처리
@@ -106,18 +106,18 @@ def preprocess_data(data_dir='data/train', target_size_cropped=(256, 256)):
         dict: 전처리된 이미지 배열 딕셔너리
     """
     categories = {
-        'square': None,  # square 이미지는 이미 512x512로 조정된 상태
-        'cropped': target_size_cropped,
-        'nerve_removed': target_size_cropped
+        'square': resize_value,
+        'cropped': resize_value,
+        'nerve_removed': resize_value
     }
     all_preprocessed_data = {}
-
+    
+    # square, cropped, nerve_removed 디렉토리 내 이미지 전처리
     for category, target_size in categories.items():
         category_dir = os.path.join(data_dir, category)
         # print(f"Preprocessing {category_dir}...")
         preprocessed_images = {}
 
-        # 해당 카테고리 디렉토리 내의 모든 이미지를 전처리
         for subdir, _, files in os.walk(category_dir):
             for file in files:
                 if file.endswith(".jpg"):
