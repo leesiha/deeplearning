@@ -57,47 +57,35 @@ class MultiscaleConvNet:
         conv_5x5 = self.conv1_5x5.forward(x)
         conv_7x7 = self.conv1_7x7.forward(x)
 
-        # 각 합성곱 결과의 크기 확인
-        print(f"conv_3x3 shape: {conv_3x3.shape}")
-        print(f"conv_5x5 shape: {conv_5x5.shape}")
-        print(f"conv_7x7 shape: {conv_7x7.shape}")
-
         # Concatenate outputs
         concat = np.concatenate((conv_3x3, conv_5x5, conv_7x7), axis=1)
-        print(f"Concatenated output shape: {concat.shape}")
 
         # First pooling
         relu_out = self.relu1.forward(concat)
         pool_out = self.pool1.forward(relu_out)
-        print(f"pool1 output shape: {pool_out.shape}")
 
         # Second conv and pooling
         conv_out = self.conv2.forward(pool_out)
         relu_out = self.relu2.forward(conv_out)
         pool_out = self.pool2.forward(relu_out)
-        print(f"pool2 output shape: {pool_out.shape}")
 
         # Third conv and pooling
         conv_out = self.conv3.forward(pool_out)
         relu_out = self.relu3.forward(conv_out)
         pool_out = self.pool3.forward(relu_out)
-        print(f"pool3 output shape: {pool_out.shape}")
 
         # Fourth conv and pooling
         conv_out = self.conv4.forward(pool_out)
         relu_out = self.relu4.forward(conv_out)
         pool_out = self.pool4.forward(relu_out)
-        print(f"pool4 output shape: {pool_out.shape}")
 
         # Fifth conv and pooling
         conv_out = self.conv5.forward(pool_out)
         relu_out = self.relu5.forward(conv_out)
         pool_out = self.pool5.forward(relu_out)
-        print(f"pool5 output shape: {pool_out.shape}")
 
         # Flatten output for the fully connected layers
         pool_out = pool_out.reshape(pool_out.shape[0], -1)
-        print(f"After flattening: {pool_out.shape}")  # 평탄화 후 크기 확인
 
         affine_out = self.affine1.forward(pool_out)
         score = self.affine2.forward(affine_out)
@@ -115,41 +103,29 @@ class MultiscaleConvNet:
         dout = self.pool5.backward(dout)
         dout = self.relu5.backward(dout)
         dout = self.conv5.backward(dout)
-        print(f"dout shape after pool5 backward: {dout.shape}")
 
         dout = self.pool4.backward(dout)
         dout = self.relu4.backward(dout)
         dout = self.conv4.backward(dout)
-        print(f"dout shape after pool4 backward: {dout.shape}")
 
         dout = self.pool3.backward(dout)
         dout = self.relu3.backward(dout)
         dout = self.conv3.backward(dout)
-        print(f"dout shape after pool3 backward: {dout.shape}")
 
         dout = self.pool2.backward(dout)
         dout = self.relu2.backward(dout)
         dout = self.conv2.backward(dout)
-        print(f"dout shape after pool2 backward: {dout.shape}")
 
         dout = self.pool1.backward(dout)
         dout = self.relu1.backward(dout)
 
         # Concatenated 레이어를 다시 분할
         dout_3x3, dout_5x5, dout_7x7 = np.split(dout, 3, axis=1)
-        print(f"dout_3x3 shape: {dout_3x3.shape}")
-        print(f"dout_5x5 shape: {dout_5x5.shape}")
-        print(f"dout_7x7 shape: {dout_7x7.shape}")
 
         # 각 합성곱 레이어로 역전파
         dout_3x3 = self.conv1_3x3.backward(dout_3x3)
         dout_5x5 = self.conv1_5x5.backward(dout_5x5)
         dout_7x7 = self.conv1_7x7.backward(dout_7x7)
-
-        # 각 합성곱 레이어의 dW 크기 확인
-        print(f"dW shape of conv1_3x3: {self.conv1_3x3.dW.shape}")
-        print(f"dW shape of conv1_5x5: {self.conv1_5x5.dW.shape}")
-        print(f"dW shape of conv1_7x7: {self.conv1_7x7.dW.shape}")
 
         return dout_3x3 + dout_5x5 + dout_7x7
 
