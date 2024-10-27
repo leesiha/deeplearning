@@ -64,7 +64,9 @@ def main():
         hidden_size_list=[100, 100],  # 히든 레이어 크기
         output_size=2,  # 이진 분류
         activation='relu',
+        weight_decay_lambda=0.0940,
         use_dropout=True,
+        dropout_ration=0.3619,
         use_batchnorm=True
     )
 
@@ -75,9 +77,9 @@ def main():
         x_test=(val_square, val_cropped, val_nerve, val_vcdr),
         t_test=val_labels,
         epochs=20,
-        mini_batch_size=19,
-        optimizer='Adam',
-        optimizer_param={'lr': 0.01},
+        mini_batch_size=22,
+        optimizer='adam',  # sgd, momentum, nesterov, adagrad, rmsprpo, adam
+        optimizer_param={'lr': 0.0011},
         verbose=True
     )
 
