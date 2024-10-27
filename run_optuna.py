@@ -3,10 +3,33 @@ import numpy as np
 from scripts.preprocess import preprocess_data
 from scripts.dataset_splitter import split_and_copy_data
 from scripts.dataset_loader import load_labels
-from models.multiscale_convnet import MultiscaleConvNet
+from models.multimodal_net import MultimodalNet  # 새로운 모델 import
 from common.trainer import Trainer
-from models.multi_layer_net_extend import MultiLayerNetExtend
 
+
+def prepare_data_for_training(data_dict, labels_dict):
+    """
+    전처리된 데이터를 학습에 적합한 형태로 변환
+    """
+    # 이미지 데이터 준비
+    square_images = np.array(list(data_dict['square'].values()))
+    cropped_images = np.array(list(data_dict['cropped'].values()))
+    nerve_images = np.array(list(data_dict['nerve_removed'].values()))
+
+    # vCDR 데이터 준비
+    vcdr_values = np.array(list(data_dict['vCDR'].values()))
+    vcdr_values = vcdr_values.reshape(-1, 1)  # (N, 1) 형태로 reshape
+
+    # 레이블 준비
+    labels = np.array([labels_dict[file]
+                      for file in data_dict['square'].keys()])
+
+    # 이미지 데이터 차원 변환 (N, H, W, C) -> (N, C, H, W)
+    square_images = square_images.transpose(0, 3, 1, 2)
+    cropped_images = cropped_images.transpose(0, 3, 1, 2)
+    nerve_images = nerve_images.transpose(0, 3, 1, 2)
+
+    return square_images, cropped_images, nerve_images, vcdr_values, labels
 
 def objective(trial):
     # 0. 데이터 분할
@@ -15,60 +38,51 @@ def objective(trial):
                         cropped_dir='G1020/Images_Cropped/img',
                         square_dir='G1020/Images_Square',
                         nerve_removed_dir='G1020/NerveRemoved_Images')
-    print("데이터 분할 완료.")
     labels_dict = load_labels('G1020/G1020.csv')
-    print("레이블 데이터 로드 완료.")
 
     # 1. 데이터 전처리
     train_data = preprocess_data(data_dir='data/train')
     validate_data = preprocess_data(data_dir='data/validate')
-    print("데이터 전처리 완료.")
 
     # 2. 데이터 준비
-    train_images = np.array(list(train_data['square'].values()))
-    train_labels = np.array([labels_dict[file]
-                            for file in train_data['square'].keys()])
+    train_square, train_cropped, train_nerve, train_vcdr, train_labels = \
+        prepare_data_for_training(train_data, labels_dict)
 
-    validate_images = np.array(list(validate_data['square'].values()))
-    validate_labels = np.array([labels_dict[file]
-                               for file in validate_data['square'].keys()])
-
-    # 훈련 및 검증 데이터의 차원 변환 (N, H, W, C) -> (N, C, H, W)
-    train_images = train_images.transpose(0, 3, 1, 2)
-    validate_images = validate_images.transpose(0, 3, 1, 2)
-    print("데이터 준비 완료.")
+    val_square, val_cropped, val_nerve, val_vcdr, val_labels = \
+        prepare_data_for_training(validate_data, labels_dict)
 
     # 3. 모델 학습
-    input_size = 224 * 224 * 3  # 224x224 이미지 크기와 3개의 채널(RGB)
-    hidden_size_list = [100, 100, 100]  # 은닉층 뉴런 수
-    output_size = 2  # 출력층 뉴런 수 (이진 분류)
 
     # 하이퍼파라미터 범위 설정
-    dropout_rate = trial.suggest_float('dropout_rate', 0.1, 0.5)
-    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2)
-    learning_rate = trial.suggest_loguniform('learning_rate', 1e-5, 1e-2)
-    batch_size = trial.suggest_int('batch_size', 16, 64)
+    dropout_rate = trial.suggest_float('dropout_rate', 0.1, 0.7)
+    weight_decay = trial.suggest_float('weight_decay', 0, 0.1)
 
     # 모델 학습 및 검증 진행 (모델 정의 필요)
-    model = MultiLayerNetExtend(
-        input_size=input_size,
-        hidden_size_list=hidden_size_list,
-        output_size=output_size,
+    model = MultimodalNet(
+        image_size=224 * 224 * 3,  # 224x224 RGB 이미지
+        vcdr_size=1,  # vCDR 값은 1차원
+        hidden_size_list=[100, 100],  # 히든 레이어 크기
+        output_size=2,
         activation='relu',
         weight_decay_lambda=weight_decay,
         use_dropout=True,
         dropout_ration=dropout_rate,
         use_batchnorm=True
     )
+
+    learning_rate = trial.suggest_float('learning_rate', 1e-4, 1e-2, log=True)
+    batch_size = trial.suggest_int('batch_size', 16, 128)
     accuracy = Trainer(
         network=model,
-        x_train=train_images, t_train=train_labels,
-        x_test=validate_images, t_test=validate_labels,
+        x_train=(train_square, train_cropped, train_nerve, train_vcdr),
+        t_train=train_labels,
+        x_test=(val_square, val_cropped, val_nerve, val_vcdr),
+        t_test=val_labels,
         epochs=20,
         mini_batch_size=batch_size,
         optimizer='Adam',
         optimizer_param={'lr': learning_rate},
-        evaluate_sample_num_per_epoch=1000
+        verbose=False
     ).train()
 
     return accuracy

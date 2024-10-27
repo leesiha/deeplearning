@@ -2,9 +2,33 @@ import numpy as np
 from scripts.preprocess import preprocess_data
 from scripts.dataset_splitter import split_and_copy_data
 from scripts.dataset_loader import load_labels
-from models.multiscale_convnet import MultiscaleConvNet
+from models.multimodal_net import MultimodalNet  # 새로운 모델 import
 from common.trainer import Trainer
-from models.multi_layer_net_extend import MultiLayerNetExtend
+
+
+def prepare_data_for_training(data_dict, labels_dict):
+    """
+    전처리된 데이터를 학습에 적합한 형태로 변환
+    """
+    # 이미지 데이터 준비
+    square_images = np.array(list(data_dict['square'].values()))
+    cropped_images = np.array(list(data_dict['cropped'].values()))
+    nerve_images = np.array(list(data_dict['nerve_removed'].values()))
+
+    # vCDR 데이터 준비
+    vcdr_values = np.array(list(data_dict['vCDR'].values()))
+    vcdr_values = vcdr_values.reshape(-1, 1)  # (N, 1) 형태로 reshape
+
+    # 레이블 준비
+    labels = np.array([labels_dict[file]
+                      for file in data_dict['square'].keys()])
+
+    # 이미지 데이터 차원 변환 (N, H, W, C) -> (N, C, H, W)
+    square_images = square_images.transpose(0, 3, 1, 2)
+    cropped_images = cropped_images.transpose(0, 3, 1, 2)
+    nerve_images = nerve_images.transpose(0, 3, 1, 2)
+
+    return square_images, cropped_images, nerve_images, vcdr_values, labels
 
 
 def main():
@@ -15,6 +39,7 @@ def main():
                         square_dir='G1020/Images_Square',
                         nerve_removed_dir='G1020/NerveRemoved_Images')
     print("데이터 분할 완료.")
+
     labels_dict = load_labels('G1020/G1020.csv')
     print("레이블 데이터 로드 완료.")
 
@@ -24,62 +49,51 @@ def main():
     print("데이터 전처리 완료.")
 
     # 2. 데이터 준비
-    train_images = np.array(list(train_data['square'].values()))
-    train_labels = np.array([labels_dict[file]
-                            for file in train_data['square'].keys()])
+    train_square, train_cropped, train_nerve, train_vcdr, train_labels = \
+        prepare_data_for_training(train_data, labels_dict)
 
-    validate_images = np.array(list(validate_data['square'].values()))
-    validate_labels = np.array([labels_dict[file]
-                               for file in validate_data['square'].keys()])
+    val_square, val_cropped, val_nerve, val_vcdr, val_labels = \
+        prepare_data_for_training(validate_data, labels_dict)
 
-    
-    # 훈련 및 검증 데이터의 차원 변환 (N, H, W, C) -> (N, C, H, W)
-    train_images = train_images.transpose(0, 3, 1, 2)
-    validate_images = validate_images.transpose(0, 3, 1, 2)
     print("데이터 준비 완료.")
 
     # 3. 모델 학습
-    input_size = 224 * 224 * 3  # 224x224 이미지 크기와 3개의 채널(RGB)
-    hidden_size_list = [100, 100, 100]  # 은닉층 뉴런 수
-    output_size = 2  # 출력층 뉴런 수 (이진 분류)
-
-    model = MultiLayerNetExtend(
-        input_size=input_size,
-        hidden_size_list=hidden_size_list,
-        output_size=output_size,
-        activation='relu',  # 활성화 함수
-        weight_decay_lambda=0.01,  # 가중치 감소 (L2 규제)
-        use_dropout=True,  # 드롭아웃 사용
-        dropout_ration=0.5,  # 드롭아웃 비율
-        use_batchnorm=True  # 배치 정규화 사용
+    model = MultimodalNet(
+        image_size=224 * 224 * 3,  # 224x224 RGB 이미지
+        vcdr_size=1,  # vCDR 값은 1차원
+        hidden_size_list=[100, 100],  # 히든 레이어 크기
+        output_size=2,  # 이진 분류
+        activation='relu',
+        use_dropout=True,
+        use_batchnorm=True
     )
 
     trainer = Trainer(
         network=model,
-        x_train=train_images, t_train=train_labels,
-        x_test=validate_images, t_test=validate_labels,
-        epochs=20, mini_batch_size=32,
-        optimizer='Adam', optimizer_param={'lr': 0.001},
+        x_train=(train_square, train_cropped, train_nerve, train_vcdr),
+        t_train=train_labels,
+        x_test=(val_square, val_cropped, val_nerve, val_vcdr),
+        t_test=val_labels,
+        epochs=20,
+        mini_batch_size=19,
+        optimizer='Adam',
+        optimizer_param={'lr': 0.01},
         verbose=True
     )
 
     trainer.train()
     print("모델 학습 완료.")
 
-    # 4. 테스트 데이터로 평가 (test set으로 예측 및 성능 확인)
+    # 4. 테스트 데이터로 평가
     test_data = preprocess_data(data_dir='data/test')
-    test_images = np.array(list(test_data['square'].values()))
-    test_labels = np.array([labels_dict[file]
-                            for file in test_data['square'].keys()])
-    test_images = test_images.transpose(0, 3, 1, 2)
+    test_square, test_cropped, test_nerve, test_vcdr, test_labels = \
+        prepare_data_for_training(test_data, labels_dict)
     print("테스트 데이터 준비 완료.")
 
-    # 5. 테스트 데이터 평가 직접 구현
-    test_predictions = trainer.network.predict(test_images)  # 테스트 데이터 예측
-    test_predictions = np.argmax(test_predictions, axis=1)  # 가장 높은 확률의 클래스로 변환
-
-    # 정확도 계산
-    test_accuracy = np.mean(test_predictions == test_labels)
+    # 5. 테스트 데이터 평가
+    test_accuracy = model.accuracy(
+        test_square, test_cropped, test_nerve, test_vcdr, test_labels
+    )
     print(f"최종 테스트 정확도: {test_accuracy:.4f}")
 
 
