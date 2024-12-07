@@ -2,24 +2,7 @@ import os
 import random
 import shutil
 
-# 파일 리스트 생성 함수
-
-
-def get_image_files(input_dir):
-    """
-    해당 디렉토리에서 이미지 파일 목록을 가져오는 함수
-    
-    Args:
-        input_dir (str): 이미지 파일이 저장된 디렉토리 경로
-        
-    Returns:
-        list: 이미지 파일 목록
-    """
-    return [f for f in os.listdir(input_dir) if f.endswith(".jpg")]
-
 # 이미지 데이터를 분할하는 함수
-
-
 def split_files(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
     """
     파일 리스트를 train/val/test로 분할하는 함수
@@ -44,8 +27,6 @@ def split_files(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
     return train_files, val_files, test_files
 
 # 출력 디렉토리 생성 함수
-
-
 def create_output_dirs(output_dir, dirs, subdirs):
     """
     출력 디렉토리를 생성하는 함수. 디렉토리가 이미 존재하는 경우 삭제 후 생성
@@ -63,8 +44,6 @@ def create_output_dirs(output_dir, dirs, subdirs):
             os.makedirs(os.path.join(output_dir, dir, subdir), exist_ok=True)
 
 # 파일 복사 함수
-
-
 def copy_files(file_list, input_dir, output_dir, dir_type, cropped_dir=None, square_dir=None, nerve_removed_dir=None, copy_all=True):
     """
     파일을 원본에서 목적지로 복사하는 함수
@@ -123,8 +102,6 @@ def copy_files(file_list, input_dir, output_dir, dir_type, cropped_dir=None, squ
                 print(f"Nerve removed image not found for {img_base_name}")
 
 # 메인 데이터 분할 및 복사 작업 함수
-
-
 def split_and_copy_data(input_dir='G1020/Images', output_dir='data/', cropped_dir='G1020/Images_Cropped/img', square_dir='G1020/Images_Square', nerve_removed_dir='G1020/NerveRemoved_Images', train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
     """
     전체 데이터 분할 및 파일 복사 작업을 수행하는 메인 함수

@@ -4,15 +4,6 @@ import numpy as np
 import cv2
 import json
 
-def calculate_vertical_diameter(points):
-    """
-    주어진 좌표에서 수직 직경을 계산하는 함수.
-    points: [(x1, y1), (x2, y2), ...] 형태의 좌표 리스트
-    """
-    y_coords = [y for x, y in points]
-    vertical_diameter = max(y_coords) - min(y_coords)
-    return vertical_diameter
-
 def calculate_cdr(json_path):
     """
     JSON 파일에서 OD와 OC의 좌표를 읽어 vCDR(Cup-to-Disc Ratio)을 계산.
@@ -62,37 +53,7 @@ def preprocess_vcdr(vcdr_value, min_val=0, max_val=1):
     normalized_vcdr = (vcdr_value - min_val) / (max_val - min_val)
     return normalized_vcdr
 
-                
-# 이미지 전처리 함수 (정규화 및 크기 조정)
-def preprocess_image(image_path, target_size=None, normalize=True):
-    """
-    이미지를 불러와서 정규화하는 함수 (크기 조정 필요 시 적용)
-    
-    Args:
-        image_path (str): 이미지 파일 경로
-        target_size (tuple, optional): (width, height)로 이미지 크기 조정 (None일 경우 크기 조정 안함)
-        normalize (bool): 0~255 값을 0~1로 정규화할지 여부
-    
-    Returns:
-        numpy array: 전처리된 이미지
-    """
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Cannot load image: {image_path}")
-
-    # 크기 조정이 필요한 경우
-    if target_size:
-        image = cv2.resize(image, target_size)
-
-    # 정규화 (0~255 값을 0~1로 변환)
-    if normalize:
-        image = image / 255.0
-
-    return image
-
 # 특정 데이터 세트(train/validate)에 대한 전처리
-
-
 def preprocess_data(data_dir='data/train', resize_value=(224, 224)):
     """
     특정 데이터 디렉토리 내 모든 이미지를 전처리하는 함수
