@@ -87,3 +87,29 @@ deeplearning
 - **추가 예정**
 
 이 README는 **현재 개발 진행 상황**에 맞추어 작성되었으며, 프로젝트가 진행됨에 따라 업데이트될 예정입니다.
+```
+deeplearning
+├─ .gitignore
+├─ README.md
+├─ common
+│  ├─ functions.py
+│  ├─ gradient.py
+│  ├─ layers.py
+│  ├─ optimizer.py
+│  ├─ trainer.py
+│  └─ util.py
+├─ main.py
+├─ models
+│  ├─ __init__.py
+│  ├─ language_model.py
+│  ├─ model_checkpoint.pkl
+│  └─ rnn.py
+└─ scripts
+   ├─ dataset_loader.py
+   ├─ dataset_splitter.py
+   ├─ generate.py
+   ├─ hyperparameter_tuning.py
+   ├─ preprocess.py
+   └─ train.py
+
+```
