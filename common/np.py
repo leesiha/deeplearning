@@ -7,10 +7,22 @@ if GPU:
     # scatter_add 대체 구현 함수
     def scatter_add(a, indices, updates):
         """
-        scatter_add 대체 구현
-        a[indices] += updates를 수행
+        Custom scatter_add implementation for CuPy
+        Args:
+            a: Target array (cupy.ndarray)
+            indices: Indices to update (1D array)
+            updates: Values to add at the specified indices (same shape as indices)
         """
-        cp.scatter_add(a, indices, updates)
+        if not GPU:
+            raise ValueError("scatter_add should only be used with GPU enabled.")
+
+        # Validate input shapes
+        assert len(indices) == len(
+            updates), "Indices and updates must have the same length"
+
+        for i, idx in enumerate(indices):
+            a[idx] += updates[i]
+
 
     cp.cuda.set_allocator(cp.cuda.MemoryPool().malloc)
     np = cp  # np를 cupy로 매핑

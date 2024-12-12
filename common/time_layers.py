@@ -307,16 +307,23 @@ class TimeSoftmaxWithLoss:
 
         mask = (ts != self.ignore_label)
 
+        # GPU 모드일 경우 cupy로 변환
+        if GPU:
+            mask = cp.array(mask)
+            xs = cp.array(xs)
+            ts = cp.array(ts)
+
         # 배치용과 시계열용을 정리(reshape)
         xs = xs.reshape(N * T, V)
         ts = ts.reshape(N * T)
         mask = mask.reshape(N * T)
 
         ys = softmax(xs)
-        ls = np.log(ys[np.arange(N * T), ts])
+        ls = cp.log(ys[cp.arange(N * T), ts]
+                    ) if GPU else np.log(ys[np.arange(N * T), ts])
         ls *= mask  # ignore_label에 해당하는 데이터는 손실을 0으로 설정
-        loss = -np.sum(ls)
-        loss /= mask.sum()
+        loss = -cp.sum(ls) if GPU else -np.sum(ls)
+        loss /= cp.sum(mask) if GPU else np.sum(mask)
 
         self.cache = (ts, ys, mask, (N, T, V))
         return loss
@@ -325,10 +332,14 @@ class TimeSoftmaxWithLoss:
         ts, ys, mask, (N, T, V) = self.cache
 
         dx = ys
-        dx[np.arange(N * T), ts] -= 1
+        if GPU:
+            dx[cp.arange(N * T), ts] -= 1
+        else:
+            dx[np.arange(N * T), ts] -= 1
         dx *= dout
-        dx /= mask.sum()
-        dx *= mask[:, np.newaxis]  # ignore_labelㅇㅔ 해당하는 데이터는 기울기를 0으로 설정
+        dx /= cp.sum(mask) if GPU else np.sum(mask)
+        # ignore_label에 해당하는 데이터는 기울기를 0으로 설정
+        dx *= mask[:, cp.newaxis] if GPU else mask[:, np.newaxis]
 
         dx = dx.reshape((N, T, V))
 
@@ -344,11 +355,16 @@ class TimeDropout:
 
     def forward(self, xs):
         if self.train_flg:
-            flg = np.random.rand(*xs.shape) > self.dropout_ratio
-            scale = 1 / (1.0 - self.dropout_ratio)
-            self.mask = flg.astype(np.float32) * scale
-
-            return xs * self.mask
+            if GPU:
+                flg = cp.random.rand(*xs.shape) > self.dropout_ratio
+                scale = 1 / (1.0 - self.dropout_ratio)
+                self.mask = flg.astype(xs.dtype) * scale
+                return xs * self.mask
+            else:
+                flg = np.random.rand(*xs.shape) > self.dropout_ratio
+                scale = 1 / (1.0 - self.dropout_ratio)
+                self.mask = flg.astype(xs.dtype) * scale
+                return xs * self.mask
         else:
             return xs
 
