@@ -170,7 +170,7 @@ def train_model(train_dir, val_dir, model_type, wordvec_size, hidden_size, max_e
     acc_list = []
     for epoch in range(max_epoch):
         print(f"Epoch {epoch + 1}/{max_epoch}")
-        trainer.fit(x_train, t_train, max_epoch=1,
+        trainer.fit(x_train, t_train, max_epoch=max_epoch,
                     batch_size=batch_size, max_grad=max_grad)
 
         # 검증 데이터 평가
