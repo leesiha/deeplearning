@@ -11,6 +11,7 @@ from common.trainer import Trainer
 from common.optimizer import Adam
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
 
 def load_json_data_from_directory(data_dir):
@@ -51,11 +52,75 @@ def load_json_data_from_directory(data_dir):
 
     return np.array(x_data), np.array(t_data), char_to_id, id_to_char
 
+def pad_sequences(sequences, maxlen, padding='post', value=0):
+    """
+    시퀀스 데이터를 패딩하여 동일한 길이로 맞춥니다.
+    
+    Args:
+        sequences (list of list): 시퀀스 데이터
+        maxlen (int): 패딩 후 시퀀스의 최대 길이
+        padding (str): 'post' 또는 'pre'
+        value (int): 패딩에 사용할 값
 
-def train_model(
-    train_dir, val_dir, model_type, wordvec_size, hidden_size, max_epoch,
-    batch_size, max_grad, learning_rate, save_path
-):
+    Returns:
+        np.array: 패딩된 시퀀스 배열
+    """
+    padded = []
+    for seq in sequences:
+        if len(seq) > maxlen:
+            if padding == 'post':
+                padded.append(seq[:maxlen])
+            else:
+                padded.append(seq[-maxlen:])
+        else:
+            pad_len = maxlen - len(seq)
+            if padding == 'post':
+                padded.append(seq + [value] * pad_len)
+            else:
+                padded.append([value] * pad_len + seq)
+    return np.array(padded)
+
+def load_tsv_data_from_directory(data_dir):
+    """
+    주어진 디렉토리에서 TSV 파일을 읽어 데이터를 로드하는 함수
+    Args:
+        data_dir (str): 데이터가 저장된 디렉토리 경로
+    Returns:
+        tuple: (x_data, t_data), char_to_id, id_to_char
+    """
+    # TSV 파일 경로 탐색
+    tsv_files = glob.glob(os.path.join(data_dir, "**/*.tsv"), recursive=True)
+
+    if not tsv_files:
+        raise FileNotFoundError(f"No TSV files found in directory {data_dir}")
+
+    # 데이터 읽기
+    all_sentences = []
+    for file in tsv_files:
+        with open(file, "r", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter="\t")
+            for row in reader:
+                input_sentence, target_sentence = row[0], row[1]
+                all_sentences.append((input_sentence, target_sentence))
+
+    # 문자 집합 생성
+    char_set = sorted(set("".join([inp + tgt for inp, tgt in all_sentences])))
+    char_to_id = {char: i for i, char in enumerate(char_set)}
+    id_to_char = {i: char for char, i in char_to_id.items()}
+
+    # 데이터를 ID 형태로 변환
+    x_data = [[char_to_id[char] for char in inp] for inp, _ in all_sentences]
+    t_data = [[char_to_id[char] for char in tgt] for _, tgt in all_sentences]
+
+    # 최대 길이 계산 및 패딩
+    max_len = max(max(len(x) for x in x_data), max(len(t) for t in t_data))
+    x_data = pad_sequences(x_data, maxlen=max_len, padding='post', value=0)
+    t_data = pad_sequences(t_data, maxlen=max_len, padding='post', value=0)
+
+    return np.array(x_data), np.array(t_data), char_to_id, id_to_char
+
+
+def train_model(train_dir, val_dir, model_type, wordvec_size, hidden_size, max_epoch, batch_size, max_grad, save_path, learning_rate):
     """
     모델 학습 함수
     Args:
@@ -67,17 +132,17 @@ def train_model(
         max_epoch (int): 학습 에폭 수
         batch_size (int): 배치 크기
         max_grad (float): 기울기 클리핑 최대값
-        learning_rate (float): 옵티마이저 학습률
         save_path (str): 학습된 모델 저장 경로
+        learning_rate (float): 학습률
     """
     # 학습 데이터 로드
     print("Loading training data...")
-    x_train, t_train, char_to_id, id_to_char = load_json_data_from_directory(
+    x_train, t_train, char_to_id, id_to_char = load_tsv_data_from_directory(
         train_dir)
 
     # 검증 데이터 로드
     print("Loading validation data...")
-    x_val, t_val, _, _ = load_json_data_from_directory(val_dir)
+    x_val, t_val, _, _ = load_tsv_data_from_directory(val_dir)
 
     # 입력 문장 반전
     x_train, x_val = x_train[:, ::-1], x_val[:, ::-1]
@@ -96,8 +161,10 @@ def train_model(
         raise ValueError(
             f"Invalid model type: {model_type}. Choose from 'attention', 'seq2seq', or 'peeky'.")
 
-    # 옵티마이저 초기화 (학습률 포함)
+    # 옵티마이저에 학습률 설정
     optimizer = Adam(lr=learning_rate)
+
+    # Trainer 객체 생성 (추가된 인자 포함)
     trainer = Trainer(model, optimizer)
 
     acc_list = []
@@ -111,8 +178,8 @@ def train_model(
         for i in range(len(x_val)):
             question, correct = x_val[[i]], t_val[[i]]
             verbose = i < 10
-            correct_num += eval_seq2seq(model, question, correct,
-                                        id_to_char, verbose, is_reverse=True)
+            correct_num += eval_seq2seq(model, question,
+                                        correct, id_to_char, verbose, is_reverse=True)
 
         acc = float(correct_num) / len(x_val)
         acc_list.append(acc)
@@ -134,16 +201,16 @@ def train_model(
 if __name__ == "__main__":
     # ArgumentParser로 명령줄 인자 처리
     parser = argparse.ArgumentParser(description="Train a Seq2Seq model.")
-    parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터", help="Path to the training data directory")
-    parser.add_argument("--val_dir", type=str, default="./data/Validation/01.원천데이터", help="Path to the validation data directory")
+    parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_경제활동_상품상거래", help="Path to the training data directory")
+    parser.add_argument("--val_dir", type=str, default="data/Validation/01.원천데이터/VS_1.발화단위평가_경제활동_상품상거래", help="Path to the validation data directory")
     parser.add_argument("--model", type=str, choices=['attention', 'seq2seq', 'peeky'], default="attention", help="Model type")
     parser.add_argument("--wordvec_size", type=int, default=16, help="Word vector size")
     parser.add_argument("--hidden_size", type=int, default=256, help="Hidden state size")
     parser.add_argument("--max_epoch", type=int, default=10, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--max_grad", type=float, default=5.0, help="Max gradient clipping value")
-    parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate")
     parser.add_argument("--save_path", type=str, default="saved_models/model_checkpoint.pkl", help="Path to save the trained model")
+    parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate")
     args = parser.parse_args()
 
     # train_model 호출
