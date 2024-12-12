@@ -164,5 +164,8 @@ class Embedding:
     def backward(self, dout):
         dW, = self.grads
         dW[...] = 0
-        scatter_add(dW, self.idx, dout)
+        if GPU:
+            scatter_add(dW, self.idx, dout)
+        else:
+            np.add.at(dW, self.idx, dout)
         return None

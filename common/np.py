@@ -2,7 +2,7 @@
 from common.config import GPU
 
 if GPU:
-    import cupy as cp
+    import cupy as np
 
     # scatter_add 대체 구현 함수
     def scatter_add(a, indices, updates):
@@ -23,9 +23,7 @@ if GPU:
         for i, idx in enumerate(indices):
             a[idx] += updates[i]
 
-
-    cp.cuda.set_allocator(cp.cuda.MemoryPool().malloc)
-    np = cp  # np를 cupy로 매핑
+    np.cuda.set_allocator(np.cuda.MemoryPool().malloc)
 
     print('\033[92m' + '-' * 60 + '\033[0m')
     print(' ' * 23 + '\033[92mGPU Mode (cupy)\033[0m')
