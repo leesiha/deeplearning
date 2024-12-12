@@ -67,7 +67,12 @@ def main():
         if not os.path.exists(args.model_path):  # 모델 파일 존재 여부 확인
             print(f"모델이 존재하지 않습니다. '{args.model_path}' 경로에 모델이 없습니다.")
             print("모델 학습을 시작합니다.")  # 모델이 없으면 학습 자동 수행
-            train_model(max_epoch=20, batch_size=64, save_path=args.model_path, learning_rate=0.005)
+            train_model(
+                max_epoch=args.max_epoch, 
+                batch_size=args.batch_size,
+                save_path=args.model_path, 
+                learning_rate=args.learning_rate
+            )
             print("모델 학습 완료.")
         print("텍스트 생성을 시작합니다.")
         generate_text(model_path=args.model_path, start_text=args.start_text, max_length=args.max_length)
@@ -75,7 +80,10 @@ def main():
     elif args.command == "tune":
         # tune 명령어 실행: 하이퍼파라미터 튜닝 수행
         print("하이퍼파라미터 튜닝을 시작합니다.")
-        tune_hyperparameters(iterations=args.iterations, save_best_model=args.save_best_model)
+        tune_hyperparameters(
+            iterations=args.iterations, 
+            save_best_model=args.save_best_model
+        )
         print("하이퍼파라미터 튜닝 완료.")
     else:
         # 명령어 입력이 없거나 잘못된 경우 도움말 출력

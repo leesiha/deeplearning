@@ -208,32 +208,3 @@ def train_model(train_dir, val_dir, model_type, wordvec_size, hidden_size, max_e
     plt.ylabel('정확도')
     plt.ylim(-0.05, 1.05)
     plt.show()
-
-
-if __name__ == "__main__":
-    # ArgumentParser로 명령줄 인자 처리
-    parser = argparse.ArgumentParser(description="Train a Seq2Seq model.")
-    parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_기술_과학", help="Path to the training data directory")
-    parser.add_argument("--val_dir", type=str, default="./data/Validation/01.원천데이터/VS_1.발화단위평가_기술_과학", help="Path to the validation data directory")
-    parser.add_argument("--model", type=str, choices=['attention', 'seq2seq', 'peeky'], default="attention", help="Model type")
-    parser.add_argument("--wordvec_size", type=int, default=16, help="Word vector size")
-    parser.add_argument("--hidden_size", type=int, default=256, help="Hidden state size")
-    parser.add_argument("--max_epoch", type=int, default=10, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
-    parser.add_argument("--max_grad", type=float, default=5.0, help="Max gradient clipping value")
-    parser.add_argument("--save_path", type=str, default="saved_models/model_checkpoint.pkl", help="Path to save the trained model")
-    parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate")
-    args = parser.parse_args()
-
-    # train_model 호출
-    train_model(
-        train_dir=args.train_dir,
-        val_dir=args.val_dir,
-        model_type=args.model,
-        wordvec_size=args.wordvec_size,
-        hidden_size=args.hidden_size,
-        max_epoch=args.max_epoch,
-        batch_size=args.batch_size,
-        max_grad=args.max_grad,
-        save_path=args.save_path
-    )
