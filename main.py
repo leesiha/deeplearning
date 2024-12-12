@@ -67,7 +67,7 @@ def main():
         if not os.path.exists(args.model_path):  # 모델 파일 존재 여부 확인
             print(f"모델이 존재하지 않습니다. '{args.model_path}' 경로에 모델이 없습니다.")
             print("모델 학습을 시작합니다.")  # 모델이 없으면 학습 자동 수행
-            train_model(epochs=10, batch_size=32, learning_rate=0.01, save_path=args.model_path)
+            train_model(max_epoch=20, batch_size=64, save_path=args.model_path, learning_rate=0.005)
             print("모델 학습 완료.")
         print("텍스트 생성을 시작합니다.")
         generate_text(model_path=args.model_path, start_text=args.start_text, max_length=args.max_length)
