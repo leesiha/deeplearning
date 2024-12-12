@@ -21,6 +21,10 @@ class BaseModel:
         if file_name is None:
             file_name = self.__class__.__name__ + '.pkl'
 
+        directory = os.path.dirname(file_name)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         params = [p.astype(np.float16) for p in self.params]
         if GPU:
             params = [to_cpu(p) for p in params]
