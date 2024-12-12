@@ -59,9 +59,8 @@ class Trainer:
                 # Evaluation
                 if (eval_interval is not None) and (iters % eval_interval) == 0:
                     avg_loss = total_loss / loss_count
-                    elapsed_time = time.time() - start_time
-                    print(
-                        f"| Epoch {self.current_epoch + 1} | Iteration {iters + 1}/{max_iters} | Time {elapsed_time:.2f}s | Loss {avg_loss:.4f}")
+                    # elapsed_time = time.time() - start_time
+                    # print(f"| Epoch {self.current_epoch + 1} | Iteration {iters + 1}/{max_iters} | Time {elapsed_time:.2f}s | Loss {avg_loss:.4f}")
                     self.loss_list.append(float(avg_loss))
                     total_loss, loss_count = 0, 0
 
