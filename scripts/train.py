@@ -173,13 +173,25 @@ def train_model(train_dir, val_dir, model_type, wordvec_size, hidden_size, max_e
         trainer.fit(x_train, t_train, max_epoch=max_epoch,
                     batch_size=batch_size, max_grad=max_grad)
 
+
         # 검증 데이터 평가
+        print(f"Start validation for epoch {epoch + 1}/{max_epoch}")
         correct_num = 0
+
         for i in range(len(x_val)):
             question, correct = x_val[[i]], t_val[[i]]
             verbose = i < 10
-            correct_num += eval_seq2seq(model, question,
-                                        correct, id_to_char, verbose, is_reverse=True)
+            print(f"Validating sample {i+1}/{len(x_val)}...")
+
+            # Eval 호출
+            try:
+                result = eval_seq2seq(model, question, correct,
+                                    id_to_char, verbose, is_reverse=True)
+                correct_num += result
+            except Exception as e:
+                print(f"Error occurred during validation at sample {i+1}: {e}")
+                break
+
 
         acc = float(correct_num) / len(x_val)
         acc_list.append(acc)
