@@ -47,21 +47,57 @@
 
 ```plaintext
 deeplearning
-├─ .gitignore
-├─ README.md
-├─ main.py                   # 메인 실행 스크립트
-|
-├─ common                    # 공통 유틸리티 및 함수
-│  ├─ 추가
-│  └─ 예정
-|
-├─ models                    # 모델 정의
-│  └─ 추가 예정
-|
-└─ scripts                   # 데이터 처리 및 로딩 관련 스크립트
-   ├─ dataset_loader.py      # 데이터 로더
-   ├─ dataset_splitter.py    # 데이터 분할기
-   └─ preprocess.py          # 전처리 스크립트
+├── .gitignore
+├── README.md                  # 프로젝트 설명 파일
+├── main.py                    # 메인 실행 스크립트
+│
+├── common                     # 공통 유틸리티 및 함수
+│   ├── __init__.py
+│   ├── base_model.py
+│   ├── config.py
+│   ├── functions.py
+│   ├── gradient.py
+│   ├── layers.py
+│   ├── np.py
+│   ├── optimizer.py
+│   ├── time_layers.py
+│   ├── trainer.py
+│   └── util.py
+│
+├── data                       # 학습 및 검증 데이터
+│   ├── Sublabel               # 하위 레이블 데이터
+│   ├── Training               # 학습 데이터
+│   └── Validation             # 검증 데이터
+│
+├── models                     # 모델 정의
+│   ├── __init__.py
+│   ├── attention_layer.py
+│   ├── attention_seq2seq.py
+│   ├── better_rnnlm.py
+│   ├── language_model.py
+│   ├── peeky_seq2seq.py
+│   ├── rnn.py
+│   ├── rnnlm.py
+│   ├── rnnlm_gen.py
+│   └── seq2seq.py
+│
+├── saved_models               # 학습된 모델 저장 디렉토리
+│   └── model_checkpoint.pkl   # 체크포인트 파일
+│
+├── scripts                    # 데이터 처리 및 로딩 관련 스크립트
+│   ├── __init__.py
+│   ├── dataset_loader.py      # 데이터 로더
+│   ├── dataset_splitter.py    # 데이터 분할기
+│   ├── generate.py            # 텍스트 생성 스크립트
+│   ├── hyperparameter_tuning.py # 하이퍼파라미터 튜닝 스크립트
+│   ├── preprocess.py          # 데이터 전처리
+│   └── train.py               # 모델 학습 스크립트
+│
+└── experiments                # 실험 결과 저장 디렉토리
+    ├── logs                   # 학습 로그
+    ├── metrics                # 모델 성능 메트릭
+    └── visualizations         # 학습 과정 시각화
+
 
 ```
 [텍스트 데이터셋 다운로드 링크](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=71773)
