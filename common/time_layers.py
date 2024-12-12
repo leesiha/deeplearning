@@ -309,9 +309,9 @@ class TimeSoftmaxWithLoss:
 
         # GPU 모드일 경우 cupy로 변환
         if GPU:
-            mask = cp.array(mask)
-            xs = cp.array(xs)
-            ts = cp.array(ts)
+            mask = np.array(mask)
+            xs = np.array(xs)
+            ts = np.array(ts)
 
         # 배치용과 시계열용을 정리(reshape)
         xs = xs.reshape(N * T, V)
@@ -319,11 +319,11 @@ class TimeSoftmaxWithLoss:
         mask = mask.reshape(N * T)
 
         ys = softmax(xs)
-        ls = cp.log(ys[cp.arange(N * T), ts]
+        ls = np.log(ys[np.arange(N * T), ts]
                     ) if GPU else np.log(ys[np.arange(N * T), ts])
         ls *= mask  # ignore_label에 해당하는 데이터는 손실을 0으로 설정
-        loss = -cp.sum(ls) if GPU else -np.sum(ls)
-        loss /= cp.sum(mask) if GPU else np.sum(mask)
+        loss = -np.sum(ls) if GPU else -np.sum(ls)
+        loss /= np.sum(mask) if GPU else np.sum(mask)
 
         self.cache = (ts, ys, mask, (N, T, V))
         return loss
@@ -333,13 +333,13 @@ class TimeSoftmaxWithLoss:
 
         dx = ys
         if GPU:
-            dx[cp.arange(N * T), ts] -= 1
+            dx[np.arange(N * T), ts] -= 1
         else:
             dx[np.arange(N * T), ts] -= 1
         dx *= dout
-        dx /= cp.sum(mask) if GPU else np.sum(mask)
+        dx /= np.sum(mask) if GPU else np.sum(mask)
         # ignore_label에 해당하는 데이터는 기울기를 0으로 설정
-        dx *= mask[:, cp.newaxis] if GPU else mask[:, np.newaxis]
+        dx *= mask[:, np.newaxis] if GPU else mask[:, np.newaxis]
 
         dx = dx.reshape((N, T, V))
 
@@ -356,7 +356,7 @@ class TimeDropout:
     def forward(self, xs):
         if self.train_flg:
             if GPU:
-                flg = cp.random.rand(*xs.shape) > self.dropout_ratio
+                flg = np.random.rand(*xs.shape) > self.dropout_ratio
                 scale = 1 / (1.0 - self.dropout_ratio)
                 self.mask = flg.astype(xs.dtype) * scale
                 return xs * self.mask
