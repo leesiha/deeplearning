@@ -201,8 +201,8 @@ def train_model(train_dir, val_dir, model_type, wordvec_size, hidden_size, max_e
 if __name__ == "__main__":
     # ArgumentParser로 명령줄 인자 처리
     parser = argparse.ArgumentParser(description="Train a Seq2Seq model.")
-    parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_경제활동_상품상거래", help="Path to the training data directory")
-    parser.add_argument("--val_dir", type=str, default="data/Validation/01.원천데이터/VS_1.발화단위평가_경제활동_상품상거래", help="Path to the validation data directory")
+    parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_기술_과학", help="Path to the training data directory")
+    parser.add_argument("--val_dir", type=str, default="./data/Validation/01.원천데이터/VS_1.발화단위평가_기술_과학", help="Path to the validation data directory")
     parser.add_argument("--model", type=str, choices=['attention', 'seq2seq', 'peeky'], default="attention", help="Model type")
     parser.add_argument("--wordvec_size", type=int, default=16, help="Word vector size")
     parser.add_argument("--hidden_size", type=int, default=256, help="Hidden state size")

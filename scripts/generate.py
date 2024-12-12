@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # ArgumentParser로 명령줄 인자 처리
     parser = argparse.ArgumentParser(
         description="Generate text using a trained RNN language model.")
-    parser.add_argument("--data_dir", type=str, default="./data/Training/01.원천데이터", help="Path to the data directory")
+    parser.add_argument("--data_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_기술_과학", help="Path to the data directory")
     parser.add_argument("--model_path", type=str, default="../ch06/Rnnlm.pkl", help="Path to the model parameter file")
     parser.add_argument("--start_word", type=str, default="you", help="Starting word for text generation")
     parser.add_argument("--skip_words", nargs='*', default=['N', '<unk>', '$'], help="List of words to skip during text generation")

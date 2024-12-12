@@ -20,9 +20,8 @@ def main():
 
     # 2-1. train 명령어: 모델 학습
     train_parser = subparsers.add_parser("train", help="Train the language model")
-    train_parser.add_argument(
-        "--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_경제활동_상품상거래", help="Path to the training data directory")
-    train_parser.add_argument("--val_dir", type=str, default="data/Validation/01.원천데이터/VS_1.발화단위평가_경제활동_상품상거래", help="Path to the validation data directory")
+    train_parser.add_argument("--train_dir", type=str, default="./data/Training/01.원천데이터/TS_1.발화단위평가_기술_과학", help="Path to the training data directory")
+    train_parser.add_argument("--val_dir", type=str, default="./data/Validation/01.원천데이터/VS_1.발화단위평가_기술_과학", help="Path to the validation data directory")
     train_parser.add_argument("--model", type=str, choices=['attention', 'seq2seq', 'peeky'], default="attention", help="Model type: 'attention', 'seq2seq', or 'peeky'")
     train_parser.add_argument("--wordvec_size", type=int, default=16, help="Word vector size")
     train_parser.add_argument("--hidden_size", type=int, default=256, help="Hidden state size")
