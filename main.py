@@ -12,9 +12,7 @@ def main():
     모델 학습, 텍스트 생성, 또는 하이퍼파라미터 튜닝을 실행합니다.
     """
     # 1. ArgumentParser 설정
-    parser = argparse.ArgumentParser(
-        description="Language Model CLI for Training, Generating, and Tuning"
-    )
+    parser = argparse.ArgumentParser()
     # 2. Subparsers를 통해 명령어 분기 설정
     subparsers = parser.add_subparsers(dest="command", help="Sub-commands")
 
@@ -34,7 +32,7 @@ def main():
     # 2-2. generate 명령어: 텍스트 생성
     generate_parser = subparsers.add_parser("generate", help="Generate text with the trained model")
     generate_parser.add_argument("--model_path", type=str, default="saved_models/model_checkpoint.pkl", help="Path to the trained model")  # 학습된 모델 경로
-    generate_parser.add_argument("--start_text", type=str, default="Hello", help="Starting text for generation")  # 텍스트 생성 시작 문구
+    generate_parser.add_argument("--start_text", type=str, default="hello", help="Starting text for generation")  # 텍스트 생성 시작 문구
     generate_parser.add_argument("--max_length", type=int, default=50, help="Maximum length of the generated text")  # 생성 텍스트 최대 길이
 
     # 2-3. tune 명령어: 하이퍼파라미터 튜닝
@@ -67,15 +65,16 @@ def main():
         if not os.path.exists(args.model_path):  # 모델 파일 존재 여부 확인
             print(f"모델이 존재하지 않습니다. '{args.model_path}' 경로에 모델이 없습니다.")
             print("모델 학습을 시작합니다.")  # 모델이 없으면 학습 자동 수행
-            train_model(
-                max_epoch=args.max_epoch, 
-                batch_size=args.batch_size,
-                save_path=args.model_path, 
-                learning_rate=args.learning_rate
-            )
+            train_model()
             print("모델 학습 완료.")
         print("텍스트 생성을 시작합니다.")
-        generate_text(model_path=args.model_path, start_text=args.start_text, max_length=args.max_length)
+        
+        generate_text(
+            data_dir="saved_models",
+            model_path=args.model_path, 
+            start_text=args.start_text, 
+            max_length=args.max_length
+        )
         print("텍스트 생성 완료.")
     elif args.command == "tune":
         # tune 명령어 실행: 하이퍼파라미터 튜닝 수행
