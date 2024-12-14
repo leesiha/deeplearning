@@ -4,7 +4,7 @@ import os
 import json
 from models.rnnlm_gen import RnnlmGen
 from models.attention_seq2seq import AttentionSeq2seq
-
+from common.np import *
 
 def load_vocab(data_dir):
     """
@@ -45,8 +45,6 @@ def load_vocab(data_dir):
 
 
 def generate_text(data_dir, model_path, start_text, max_length):
-    import numpy as np
-
     # 단어 사전 로드
     print("Loading vocabulary...")
     word_to_id, id_to_word = load_vocab(data_dir)
