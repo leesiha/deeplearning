@@ -28,6 +28,7 @@ def main():
     train_parser.add_argument("--max_grad", type=float, default=5.0, help="Max gradient clipping value")
     train_parser.add_argument("--save_path", type=str, default="saved_models/model_checkpoint.pkl", help="Path to save the trained model")  # 학습된 모델 저장 경로
     train_parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate")
+    train_parser.add_argument("--sample_fraction", type=float, default=1.0, help="Fraction of samples to use for training")  # 학습 데이터 샘플링 비율
 
     # 2-2. generate 명령어: 텍스트 생성
     generate_parser = subparsers.add_parser("generate", help="Generate text with the trained model")
@@ -57,7 +58,8 @@ def main():
             batch_size=args.batch_size,
             max_grad=args.max_grad,
             save_path=args.save_path,
-            learning_rate=args.learning_rate
+            learning_rate=args.learning_rate,
+            sample_fraction=args.sample_fraction
         )
         print("모델 학습 완료.")
     elif args.command == "generate":

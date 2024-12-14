@@ -150,14 +150,15 @@ def train_model(
     batch_size: int = 32,
     max_grad: float = 5.0,
     save_path: str = "saved_models/model_checkpoint.pkl",
-    learning_rate: float = 0.01
+    learning_rate: float = 0.01,
+    sample_fraction: float = 1.0
 ):
     """
     모델 학습 함수 (trainer.py 원본 코드 사용)
     """
     # 데이터 로드
-    x_train, t_train, char_to_id, id_to_char = load_tsv_data_from_directory(train_dir)
-    x_val, t_val, _, _ = load_tsv_data_from_directory(val_dir)
+    x_train, t_train, char_to_id, id_to_char = load_tsv_data_from_directory(train_dir, sample_fraction)
+    x_val, t_val, _, _ = load_tsv_data_from_directory(val_dir, sample_fraction)
 
     if batch_size > len(x_train):
         batch_size = len(x_train)
