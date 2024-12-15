@@ -1,4 +1,5 @@
 # coding: utf-8
+import json
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from models.attention_seq2seq import AttentionSeq2seq
@@ -69,7 +70,12 @@ def pad_sequences(sequences, maxlen, padding='post', value=0):
                           'post' else [value] * pad_len + seq)
     return np.array(padded)
 
-def load_tsv_data_from_directory(data_dir: str, sample_fraction: float = 1.0) -> Tuple[np.ndarray, np.ndarray, Dict[str, int], Dict[int, str]]:
+
+def load_tsv_data_from_directory(
+    data_dir: str,
+    sample_fraction: float = 1.0,
+    vocab_path: str = "./saved_models/vocab.json"
+) -> Tuple[np.ndarray, np.ndarray, Dict[str, int], Dict[int, str]]:
     """
     Load sentences from a TSV directory, tokenize by spaces, and build a vocabulary at the word level.
     Optionally, randomly sample a fraction of the data.
@@ -77,6 +83,7 @@ def load_tsv_data_from_directory(data_dir: str, sample_fraction: float = 1.0) ->
     Args:
         data_dir (str): Directory containing TSV files.
         sample_fraction (float): Fraction of the data to sample (default=1.0, meaning no sampling).
+        vocab_path (str): Path to save or load the vocabulary JSON file.
     Returns:
         tuple: (x_data, t_data, word_to_id, id_to_word)
     """
@@ -104,26 +111,36 @@ def load_tsv_data_from_directory(data_dir: str, sample_fraction: float = 1.0) ->
         except Exception as e:
             logger.error(f"Error reading TSV file: {file}, {e}")
 
-    # logger.info(f"Total sentences loaded: {len(all_sentences)}")
-
     # 데이터 샘플링
     if 0 < sample_fraction < 1.0:
         sample_size = int(len(all_sentences) * sample_fraction)
-        sampled_indices = np.random.choice(len(all_sentences), sample_size, replace=False)
+        sampled_indices = np.random.choice(
+            len(all_sentences), sample_size, replace=False)
         all_sentences = [all_sentences[i] for i in sampled_indices.tolist()]
         logger.info(
             f"Sampled {sample_size} sentences from {len(all_sentences)}")
 
-    # 단어 집합 생성
-    all_words = [
-        word for sentence in all_sentences for word in sentence.split()
-    ]
-    word_set = sorted(set(all_words))  # 고유 단어 집합
-    word_to_id = {word: i for i, word in enumerate(word_set)}
-    id_to_word = {i: word for word, i in word_to_id.items()}
+    # Vocabulary 로드 또는 생성
+    if os.path.exists(vocab_path):
+        logger.info(f"Loading vocabulary from {vocab_path}")
+        with open(vocab_path, "r", encoding="utf-8") as f:
+            vocab = json.load(f)
+            word_to_id = vocab["word_to_id"]
+            id_to_word = vocab["id_to_word"]
+    else:
+        # 단어 집합 생성
+        all_words = [
+            word for sentence in all_sentences for word in sentence.split()
+        ]
+        word_set = sorted(set(all_words))  # 고유 단어 집합
+        word_to_id = {word: i for i, word in enumerate(word_set)}
+        id_to_word = {i: word for word, i in word_to_id.items()}
 
-    # logger.info(f"Vocabulary size: {len(word_to_id)}")
-    # logger.info(f"Sample vocabulary: {list(word_to_id.items())[:10]}")
+        # Vocabulary 저장
+        logger.info(f"Saving vocabulary to {vocab_path}")
+        with open(vocab_path, "w", encoding="utf-8") as f:
+            json.dump({"word_to_id": word_to_id, "id_to_word": id_to_word},
+                      f, ensure_ascii=False, indent=4)
 
     # ID로 변환
     x_data = [[word_to_id[word] for word in sentence.split() if word in word_to_id]
@@ -139,6 +156,7 @@ def load_tsv_data_from_directory(data_dir: str, sample_fraction: float = 1.0) ->
     t_data = x_data
 
     return np.array(x_data), t_data, word_to_id, id_to_word
+
 
 def train_model(
     train_dir: str,
