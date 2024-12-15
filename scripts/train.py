@@ -74,7 +74,7 @@ def pad_sequences(sequences, maxlen, padding='post', value=0):
 def load_tsv_data_from_directory(
     data_dir: str,
     sample_fraction: float = 1.0,
-    vocab_path: str = "./saved_models/vocab.json"
+    vocab_path: str = "saved_models"
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, int], Dict[int, str]]:
     """
     Load sentences from a TSV directory, tokenize by spaces, and build a vocabulary at the word level.
@@ -117,13 +117,18 @@ def load_tsv_data_from_directory(
         sampled_indices = np.random.choice(
             len(all_sentences), sample_size, replace=False)
         all_sentences = [all_sentences[i] for i in sampled_indices.tolist()]
-        logger.info(
+        print(
             f"Sampled {sample_size} sentences from {len(all_sentences)}")
 
     # Vocabulary 로드 또는 생성
-    if os.path.exists(vocab_path):
-        logger.info(f"Loading vocabulary from {vocab_path}")
-        with open(vocab_path, "r", encoding="utf-8") as f:
+    vocab_file_path = os.path.join(vocab_path, "vocab.json")
+    if not os.path.exists(vocab_path):
+        # Create the directory only if it doesn't exist
+        os.makedirs(vocab_path)
+
+    if os.path.exists(vocab_file_path):
+        print(f"Loading vocabulary from {vocab_file_path}")
+        with open(vocab_file_path, "r", encoding="utf-8") as f:
             vocab = json.load(f)
             word_to_id = vocab["word_to_id"]
             id_to_word = vocab["id_to_word"]
@@ -137,8 +142,8 @@ def load_tsv_data_from_directory(
         id_to_word = {i: word for word, i in word_to_id.items()}
 
         # Vocabulary 저장
-        logger.info(f"Saving vocabulary to {vocab_path}")
-        with open(vocab_path, "w", encoding="utf-8") as f:
+        print(f"Saving vocabulary to {vocab_file_path}")
+        with open(vocab_file_path, "w", encoding="utf-8") as f:
             json.dump({"word_to_id": word_to_id, "id_to_word": id_to_word},
                       f, ensure_ascii=False, indent=4)
 
@@ -150,7 +155,7 @@ def load_tsv_data_from_directory(
     max_len = max(len(seq) for seq in x_data) if x_data else 0
     x_data = pad_sequences(x_data, maxlen=max_len, padding='post', value=0)
 
-    logger.info(f"Input data shape: {x_data.shape}")
+    print(f"Input data shape: {x_data.shape}")
 
     # 타겟 데이터는 입력과 동일
     t_data = x_data
@@ -167,7 +172,7 @@ def train_model(
     max_epoch: int = 10,
     batch_size: int = 32,
     max_grad: float = 5.0,
-    save_path: str = "saved_models/model_checkpoint.pkl",
+    save_path: str = "saved_models",
     learning_rate: float = 0.01,
     sample_fraction: float = 1.0
 ):
@@ -175,13 +180,37 @@ def train_model(
     모델 학습 함수 (trainer.py 원본 코드 사용)
     """
     # 데이터 로드
-    x_train, t_train, char_to_id, id_to_char = load_tsv_data_from_directory(train_dir, sample_fraction)
-    x_val, t_val, _, _ = load_tsv_data_from_directory(val_dir, sample_fraction)
+    x_train, t_train, char_to_id, id_to_char = load_tsv_data_from_directory(train_dir, sample_fraction, save_path)
+    x_val, t_val, _, _ = load_tsv_data_from_directory(val_dir, sample_fraction, save_path)
+
+    vocab_size = len(char_to_id)  # Vocabulary size 계산
 
     if batch_size > len(x_train):
         batch_size = len(x_train)
         logger.warning(
             f"Batch size adjusted to {batch_size} as it exceeded dataset size.")
+
+    # 하이퍼파라미터 저장 경로
+    os.makedirs(save_path, exist_ok=True)
+    hyperparams_path = os.path.join(save_path, "hyperparams.json")
+
+    # 하이퍼파라미터를 JSON으로 저장
+    hyperparams = {
+        "model_type": model_type,
+        "wordvec_size": wordvec_size,
+        "hidden_size": hidden_size,
+        "max_epoch": max_epoch,
+        "batch_size": batch_size,
+        "max_grad": max_grad,
+        "learning_rate": learning_rate,
+        "sample_fraction": sample_fraction,
+        "train_dir": train_dir,
+        "val_dir": val_dir,
+        "vocab_size": vocab_size  # Vocabulary size 추가
+    }
+    with open(hyperparams_path, "w", encoding="utf-8") as f:
+        json.dump(hyperparams, f, indent=4, ensure_ascii=False)
+    logger.info(f"Hyperparameters saved to {hyperparams_path}")
 
     # 모델 준비
     model_factory = {
@@ -192,7 +221,7 @@ def train_model(
     model_class = model_factory.get(model_type)
     if not model_class:
         raise ValueError(f"Unsupported model type: {model_type}")
-    model = model_class(len(char_to_id), wordvec_size, hidden_size)
+    model = model_class(vocab_size, wordvec_size, hidden_size)
     optimizer = Adam(lr=learning_rate)
     trainer = Trainer(model, optimizer)
 
@@ -222,11 +251,11 @@ def train_model(
             continue
 
     accuracy = correct / total
-    logger.info(f"Validation Accuracy: {accuracy:.2%}")
+    print(f"Validation Accuracy: {accuracy:.2%}")
 
     # 모델 저장
-    model.save_params(save_path)
-    logger.info(f"Model saved to {save_path}")
+    model.save_params(os.path.join(save_path, "model_checkpoint.pkl"))
+    print(f"Model saved to {save_path}")
 
 if __name__ == "__main__":
     # 테스트용 데이터 디렉토리 경로
@@ -234,23 +263,23 @@ if __name__ == "__main__":
 
     # 테스트 실행
     try:
-        logger.info("TSV 데이터 로드 테스트 시작...")
+        print("TSV 데이터 로드 테스트 시작...")
         x_data, t_data, char_to_id, id_to_char = load_tsv_data_from_directory(test_data_dir)
 
         # 로드된 데이터 정보 출력
-        logger.info(f"입력 데이터 샘플 크기: {x_data.shape}")
-        logger.info(f"타겟 데이터 샘플 크기: {t_data.shape}")
-        logger.info(f"단어 집합 크기: {len(char_to_id)}")
-        logger.info(f"단어 집합 예시: {list(char_to_id.items())[:10]}")
+        print(f"입력 데이터 샘플 크기: {x_data.shape}")
+        print(f"타겟 데이터 샘플 크기: {t_data.shape}")
+        print(f"단어 집합 크기: {len(char_to_id)}")
+        print(f"단어 집합 예시: {list(char_to_id.items())[:10]}")
 
         # 첫 번째 데이터 샘플 출력
-        logger.info(f"첫 번째 입력 데이터 (ID): {x_data[0]}")
-        logger.info(f"첫 번째 타겟 데이터 (ID): {t_data[0]}")
-        logger.info(
+        print(f"첫 번째 입력 데이터 (ID): {x_data[0]}")
+        print(f"첫 번째 타겟 데이터 (ID): {t_data[0]}")
+        print(
             f"첫 번째 입력 데이터 (문자): {''.join([id_to_char[id] for id in x_data[0] if id in id_to_char])}")
-        logger.info(
+        print(
             f"첫 번째 타겟 데이터 (문자): {''.join([id_to_char[id] for id in t_data[0] if id in id_to_char])}")
 
-        logger.info("TSV 데이터 로드 테스트 완료.")
+        print("TSV 데이터 로드 테스트 완료.")
     except Exception as e:
         logger.error(f"TSV 데이터 로드 테스트 실패: {e}")
